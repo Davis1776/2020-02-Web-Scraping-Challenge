@@ -17,58 +17,61 @@ def scrape():
 
 # --------------------------------------------------------------------------------------------
     # NASA Mars News
-    url = 'https://mars.nasa.gov/news/'
+    url_nasa = 'https://mars.nasa.gov/news/'
 
-    browser.visit(url)
+    browser.visit(url_nasa)
     time.sleep(1)
 
     html = browser.html
-    soup = BeautifulSoup(html, 'html.parser')
+    soup = bs(html, 'html.parser')
 
-    slides = soup.find_all('li', class_='slide')
+    # NASA MARS top news story - title
+    news_title = soup.find('div', class_="content_title").text.strip()
+    news_title
 
-    html = browser.html
-    soup = BeautifulSoup(html, "html.parser")
-
-    content_title = slides[0].find('div', class_='content_title')
-    news_title = content_title.text.strip()
-
-    article_teaser_body = slides[0].find('div', class_='article_teaser_body')
-    news_p = article_teaser_body.text.strip()
+    # NASA MARS top news story - paragraph
+    news_p = soup.find('div', class_="article_teaser_body").text.strip()
+    news_p
 
 # --------------------------------------------------------------------------------------------
     # JPL Mars Space Images
-    base_url = 'https://www.jpl.nasa.gov'
-    url = base_url + '/spaceimages/?search=&category=Mars'
-
-    browser.visit(url)
+    url_jpl = "https://www.jpl.nasa.gov/spaceimages/?search=&category=Mars"
+    browser.visit(url_jpl)
     time.sleep(1)
-    html = browser.html
-    soup = BeautifulSoup(html, 'html.parser')
 
-    featured_image_url = base_url + soup.find('a',class_='button fancybox')['data-fancybox-href']    
+    #click the button
+    browser.find_by_id('full_image').first.click()
+    time.sleep(1)
+
+    html = browser.html
+    soup = bs(html, "html.parser")
+
+    marsimage = soup.find('img', class_="fancybox-image").get("src")
+    baseurl = 'https://www.jpl.nasa.gov'
+    featured_image_url = baseurl+marsimage
+    featured_image_url
 
 # --------------------------------------------------------------------------------------------
     # Mars Weather
-    url = 'https://twitter.com/marswxreport?lang=en'
+url_weather = "https://twitter.com/marswxreport?lang=en"
+browser.visit(url_weather)
+time.sleep(3)
 
-    browser.visit(url)
-    time.sleep(1)
-    html = browser.html
-    soup = BeautifulSoup(html, 'html.parser')
+html = browser.html
+soup = bs(html, "html.parser")
 
-    streamitems = soup.find_all('li', class_='js-stream-item stream-item stream-item')
+response = requests.get(url_weather)
+time.sleep(1)
 
-    i = 0
-    while streamitems[i].find('strong',class_='fullname').text.strip() != 'Mars Weather':
-        i = i+1
-        
-    mars_weather = streamitems[i].find('div',class_='js-tweet-text-container')
-    temp = mars_weather.find('a').text
-    mars_weather = mars_weather.text
-    if len(temp) > 0:
-        mars_weather = mars_weather[:(len(mars_weather) - len(temp) - 1)].strip()
-    mars_weather = mars_weather.replace("\n", ", ")
+twitter_soup = bs(response.text, 'html.parser')
+timeline = twitter_soup.select('#timeline li.stream-item')
+
+all_tweets = []
+for tweet in timeline:
+    tweet_text = tweet.select('p.tweet-text')[0].get_text()
+    all_tweets.append({"text": tweet_text})
+mars_weather = all_tweets[0]
+print(mars_weather)
 
 # --------------------------------------------------------------------------------------------
     # Mars facts
